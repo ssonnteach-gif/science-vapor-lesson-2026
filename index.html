@@ -15,6 +15,7 @@
       --point: #e5383b;
       --guide: #7c3aed;
       --dew: #138a72;
+      --condensation: #f59e0b;
       --sat: #1769aa;
       --unsat: #2f855a;
       --super: #b83232;
@@ -102,7 +103,8 @@
       font-size: 13px;
     }
 
-    .axis-label {
+    .axis-label,
+    .graph-value {
       font-weight: 700;
     }
 
@@ -113,17 +115,25 @@
       stroke-linecap: round;
     }
 
-    .guide-line {
+    .sat-arrow {
       stroke: var(--guide);
-      stroke-width: 3;
-      stroke-dasharray: 8 7;
+      stroke-width: 4;
+      stroke-linecap: round;
+      marker-end: url(#arrowGuide);
     }
 
-    .dew-line {
+    .dew-arrow {
       stroke: var(--dew);
-      stroke-width: 3;
-      stroke-dasharray: 2 7;
+      stroke-width: 4;
       stroke-linecap: round;
+      marker-end: url(#arrowDew);
+    }
+
+    .condensation-arrow {
+      stroke: var(--condensation);
+      stroke-width: 4;
+      stroke-linecap: round;
+      marker-end: url(#arrowCondensation);
     }
 
     .point {
@@ -144,6 +154,26 @@
       fill: var(--dew);
       stroke: #ffffff;
       stroke-width: 3;
+    }
+
+    .graph-value {
+      paint-order: stroke;
+      stroke: #ffffff;
+      stroke-width: 5;
+      stroke-linejoin: round;
+      font-size: 15px;
+    }
+
+    .sat-label {
+      fill: var(--guide);
+    }
+
+    .dew-label {
+      fill: var(--dew);
+    }
+
+    .condensation-label {
+      fill: #b45309;
     }
 
     .info-area {
@@ -235,6 +265,10 @@
       background: var(--dew);
     }
 
+    .sample.condensation-sample {
+      background: var(--condensation);
+    }
+
     .note {
       margin: auto 0 0;
       color: var(--muted);
@@ -294,11 +328,11 @@
           <strong id="coordText">20°C, 10 g/m³</strong>
         </div>
         <div class="metric">
-          <span>이 온도에서의 포화수증기량</span>
+          <span>현재 온도에서의 포화수증기량</span>
           <strong id="satText">17.3 g/m³</strong>
         </div>
         <div class="metric">
-          <span>이슬점 온도</span>
+          <span>현재 수증기량의 이슬점 온도</span>
           <strong id="dewText">11.3°C</strong>
         </div>
         <div class="metric">
@@ -310,8 +344,9 @@
       <section class="legend" aria-label="그래프 설명">
         <div class="legend-item"><span class="sample"></span><span>파란 곡선: 온도에 따른 포화수증기량</span></div>
         <div class="legend-item"><span class="sample point-sample"></span><span>빨간 점: 학생이 선택한 공기의 상태</span></div>
-        <div class="legend-item"><span class="sample guide-sample"></span><span>보라색 선: 현재 온도에서 곡선까지의 차이</span></div>
-        <div class="legend-item"><span class="sample dew-sample"></span><span>초록색 선: 수증기량이 일정할 때 이슬점까지의 이동</span></div>
+        <div class="legend-item"><span class="sample guide-sample"></span><span>보라색 화살표: 현재 점의 온도에서 포화수증기량까지</span></div>
+        <div class="legend-item"><span class="sample dew-sample"></span><span>초록색 화살표: 현재 수증기량을 유지할 때 이슬점 온도까지</span></div>
+        <div class="legend-item"><span class="sample condensation-sample"></span><span>주황색 화살표: 과포화 상태에서 응결되는 수증기량</span></div>
       </section>
 
       <p class="note">
@@ -336,7 +371,7 @@
       maxT: 40,
       minV: 0,
       maxV: 55,
-      margin: { top: 22, right: 22, bottom: 58, left: 66 },
+      margin: { top: 22, right: 44, bottom: 58, left: 66 },
     };
 
     let selected = { temp: 20, vapor: 10 };
@@ -410,6 +445,35 @@
       return node;
     }
 
+    function addText(text, attrs) {
+      const node = svgEl("text", attrs);
+      node.textContent = text;
+      svg.append(node);
+      return node;
+    }
+
+    function addArrowMarker(id, color) {
+      const marker = svgEl("marker", {
+        id,
+        viewBox: "0 0 10 10",
+        refX: 8,
+        refY: 5,
+        markerWidth: 7,
+        markerHeight: 7,
+        orient: "auto-start-reverse",
+      });
+      marker.append(svgEl("path", { d: "M 0 0 L 10 5 L 0 10 z", fill: color }));
+      return marker;
+    }
+
+    function addDefinitions() {
+      const defs = svgEl("defs");
+      defs.append(addArrowMarker("arrowGuide", "#7c3aed"));
+      defs.append(addArrowMarker("arrowDew", "#138a72"));
+      defs.append(addArrowMarker("arrowCondensation", "#f59e0b"));
+      svg.append(defs);
+    }
+
     function curvePath() {
       const points = [];
       for (let temp = chart.minT; temp <= chart.maxT; temp += 0.5) {
@@ -423,54 +487,47 @@
       const b = plotBounds();
       svg.setAttribute("viewBox", `0 0 ${size.width} ${size.height}`);
       svg.innerHTML = "";
+      addDefinitions();
 
       for (let temp = chart.minT; temp <= chart.maxT; temp += 5) {
         const x = xScale(temp);
         svg.append(svgEl("line", { x1: x, y1: b.top, x2: x, y2: b.bottom, class: "grid" }));
-        const xTickLabel = svgEl("text", {
+        addText(temp, {
           x,
           y: b.bottom + 24,
           "text-anchor": "middle",
           class: "tick-label",
         });
-        xTickLabel.textContent = temp;
-        svg.append(xTickLabel);
       }
 
       for (let vapor = chart.minV; vapor <= chart.maxV; vapor += 5) {
         const y = yScale(vapor);
         svg.append(svgEl("line", { x1: b.left, y1: y, x2: b.right, y2: y, class: "grid" }));
-        const yTickLabel = svgEl("text", {
+        addText(vapor, {
           x: b.left - 10,
           y: y + 4,
           "text-anchor": "end",
           class: "tick-label",
         });
-        yTickLabel.textContent = vapor;
-        svg.append(yTickLabel);
       }
 
       svg.append(svgEl("line", { x1: b.left, y1: b.bottom, x2: b.right, y2: b.bottom, class: "axis" }));
       svg.append(svgEl("line", { x1: b.left, y1: b.top, x2: b.left, y2: b.bottom, class: "axis" }));
 
-      const xAxisLabel = svgEl("text", {
+      addText("온도 (°C)", {
         x: (b.left + b.right) / 2,
         y: size.height - 17,
         "text-anchor": "middle",
         class: "axis-label",
       });
-      xAxisLabel.textContent = "온도 (°C)";
-      svg.append(xAxisLabel);
 
-      const yLabel = svgEl("text", {
+      addText("수증기량 (g/m³)", {
         x: 18,
         y: (b.top + b.bottom) / 2,
         "text-anchor": "middle",
         class: "axis-label",
         transform: `rotate(-90 18 ${(b.top + b.bottom) / 2})`,
       });
-      yLabel.textContent = "수증기량 (g/m³)";
-      svg.append(yLabel);
 
       svg.append(svgEl("path", { d: curvePath(), class: "curve" }));
 
@@ -480,13 +537,14 @@
       const pointY = yScale(selected.vapor);
       const curveY = yScale(satAtTemp);
       const curvePoint = { x: pointX, y: curveY };
+      const condensation = Math.max(0, selected.vapor - satAtTemp);
 
       svg.append(svgEl("line", {
         x1: pointX,
-        y1: pointY,
+        y1: b.bottom,
         x2: curvePoint.x,
         y2: curvePoint.y,
-        class: "guide-line",
+        class: "sat-arrow",
       }));
       svg.append(svgEl("circle", {
         cx: curvePoint.x,
@@ -494,6 +552,12 @@
         r: 7,
         class: "curve-point",
       }));
+      addText(`${satAtTemp.toFixed(1)} g/m³`, {
+        x: Math.min(curvePoint.x + 12, b.right - 8),
+        y: curvePoint.y - 10,
+        "text-anchor": curvePoint.x > b.right - 100 ? "end" : "start",
+        class: "graph-value sat-label",
+      });
 
       if (dewPoint !== null) {
         svg.append(svgEl("line", {
@@ -501,7 +565,7 @@
           y1: pointY,
           x2: xScale(dewPoint),
           y2: pointY,
-          class: "dew-line",
+          class: "dew-arrow",
         }));
         svg.append(svgEl("circle", {
           cx: xScale(dewPoint),
@@ -509,6 +573,30 @@
           r: 7,
           class: "dew-point",
         }));
+        addText(`${dewPoint.toFixed(1)}°C`, {
+          x: xScale(dewPoint),
+          y: pointY - 12,
+          "text-anchor": "middle",
+          class: "graph-value dew-label",
+        });
+      }
+
+      if (condensation > 0.05) {
+        const offset = pointX > b.right - 70 ? -18 : 18;
+        const labelAnchor = pointX > b.right - 120 ? "end" : "start";
+        svg.append(svgEl("line", {
+          x1: pointX + offset,
+          y1: pointY,
+          x2: curvePoint.x + offset,
+          y2: curvePoint.y,
+          class: "condensation-arrow",
+        }));
+        addText(`응결량 ${condensation.toFixed(1)} g/m³`, {
+          x: pointX + (labelAnchor === "end" ? -14 : 14),
+          y: pointY - 16,
+          "text-anchor": labelAnchor,
+          class: "graph-value condensation-label",
+        });
       }
 
       svg.append(svgEl("circle", {
@@ -518,10 +606,10 @@
         class: "point",
       }));
 
-      updateInfo(satAtTemp, dewPoint);
+      updateInfo(satAtTemp, dewPoint, condensation);
     }
 
-    function updateInfo(satAtTemp, dewPoint) {
+    function updateInfo(satAtTemp, dewPoint, condensation) {
       const diff = selected.vapor - satAtTemp;
       const tolerance = 0.5;
       let state = "불포화 상태";
@@ -534,11 +622,10 @@
         color = "var(--sat)";
       } else if (diff > tolerance) {
         state = "과포화 상태";
-        text = "이 온도에서 포함할 수 있는 양보다 수증기가 많아 응결이 일어날 수 있습니다.";
+        text = "현재 수증기량이 포화수증기량보다 많아 초과한 양이 응결될 수 있습니다.";
         color = "var(--super)";
       }
 
-      const condensation = Math.max(0, diff);
       statusBox.style.borderLeftColor = color;
       stateName.textContent = state;
       stateText.textContent = text;
