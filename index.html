@@ -13,9 +13,9 @@
       --line: #d8dee8;
       --curve: #1769aa;
       --point: #e5383b;
-      --guide: #7c3aed;
-      --dew: #138a72;
-      --condensation: #f59e0b;
+      --guide: #dc2626;
+      --dew: #0ea5e9;
+      --condensation: #1769aa;
       --sat: #1769aa;
       --unsat: #2f855a;
       --super: #b83232;
@@ -129,11 +129,19 @@
       marker-end: url(#arrowDew);
     }
 
-    .condensation-arrow {
+    .condensation-curve {
+      fill: none;
       stroke: var(--condensation);
-      stroke-width: 4;
+      stroke-width: 2.5;
       stroke-linecap: round;
-      marker-end: url(#arrowCondensation);
+      stroke-dasharray: 5 6;
+    }
+
+    .dew-drop-line {
+      stroke: var(--dew);
+      stroke-width: 2;
+      stroke-dasharray: 5 6;
+      stroke-linecap: round;
     }
 
     .point {
@@ -173,7 +181,73 @@
     }
 
     .condensation-label {
-      fill: #b45309;
+      fill: var(--condensation);
+      font-size: 15px;
+    }
+
+    .mode-tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .mode-button,
+    .check-button {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #ffffff;
+      color: var(--ink);
+      font: inherit;
+      font-weight: 700;
+      min-height: 42px;
+      cursor: pointer;
+    }
+
+    .mode-button.active,
+    .check-button {
+      background: var(--ink);
+      color: #ffffff;
+      border-color: var(--ink);
+    }
+
+    .quiz-panel {
+      display: none;
+      gap: 10px;
+    }
+
+    .quiz-panel.active {
+      display: grid;
+    }
+
+    .quiz-row {
+      display: grid;
+      gap: 5px;
+    }
+
+    .quiz-row label {
+      color: var(--muted);
+      font-size: 0.88rem;
+      font-weight: 700;
+    }
+
+    .quiz-row input {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      min-height: 40px;
+      padding: 8px 10px;
+      font: inherit;
+    }
+
+    .quiz-feedback {
+      min-height: 24px;
+      color: var(--muted);
+      font-size: 0.92rem;
+      line-height: 1.45;
+    }
+
+    body.quiz-mode .metrics {
+      display: none;
     }
 
     .info-area {
@@ -322,14 +396,19 @@
         <p id="stateText">공기가 아직 더 많은 수증기를 포함할 수 있습니다.</p>
       </section>
 
+      <section class="mode-tabs" aria-label="학습 모드 선택">
+        <button class="mode-button active" id="learnModeButton" type="button">배움모드</button>
+        <button class="mode-button" id="quizModeButton" type="button">문제모드</button>
+      </section>
+
       <section class="metrics" aria-label="계산값">
         <div class="metric">
           <span>현재 좌표</span>
-          <strong id="coordText">20°C, 10 g/m³</strong>
+          <strong id="coordText">20°C, 10 g/kg</strong>
         </div>
         <div class="metric">
           <span>현재 온도에서의 포화수증기량</span>
-          <strong id="satText">17.3 g/m³</strong>
+          <strong id="satText">14.7 g/kg</strong>
         </div>
         <div class="metric">
           <span>현재 수증기량의 이슬점 온도</span>
@@ -337,16 +416,33 @@
         </div>
         <div class="metric">
           <span>응결량</span>
-          <strong id="condText">0.0 g/m³</strong>
+          <strong id="condText">0.0 g/kg</strong>
         </div>
       </section>
 
+      <section class="quiz-panel" id="quizPanel" aria-label="문제모드 입력">
+        <div class="quiz-row">
+          <label for="satAnswer">포화수증기량 (g/kg)</label>
+          <input id="satAnswer" inputmode="decimal" placeholder="예: 14.7" />
+        </div>
+        <div class="quiz-row">
+          <label for="dewAnswer">이슬점 온도 (°C)</label>
+          <input id="dewAnswer" inputmode="decimal" placeholder="예: 11.3" />
+        </div>
+        <div class="quiz-row">
+          <label for="condAnswer">응결량 (g/kg)</label>
+          <input id="condAnswer" inputmode="decimal" placeholder="예: 0.0" />
+        </div>
+        <button class="check-button" id="checkAnswerButton" type="button">정답 확인</button>
+        <p class="quiz-feedback" id="quizFeedback"></p>
+      </section>
+
       <section class="legend" aria-label="그래프 설명">
-        <div class="legend-item"><span class="sample"></span><span>파란 곡선: 온도에 따른 포화수증기량</span></div>
-        <div class="legend-item"><span class="sample point-sample"></span><span>빨간 점: 학생이 선택한 공기의 상태</span></div>
-        <div class="legend-item"><span class="sample guide-sample"></span><span>보라색 화살표: 현재 점의 온도에서 포화수증기량까지</span></div>
-        <div class="legend-item"><span class="sample dew-sample"></span><span>초록색 화살표: 현재 수증기량을 유지할 때 이슬점 온도까지</span></div>
-        <div class="legend-item"><span class="sample condensation-sample"></span><span>주황색 화살표: 과포화 상태에서 응결되는 수증기량</span></div>
+        <div class="legend-item"><span class="sample"></span><span>온도에 따른 포화수증기량 곡선</span></div>
+        <div class="legend-item"><span class="sample point-sample"></span><span>현재 공기의 상태</span></div>
+        <div class="legend-item"><span class="sample guide-sample"></span><span>현재 온도에서 포화수증기량까지</span></div>
+        <div class="legend-item"><span class="sample dew-sample"></span><span>현재 수증기량을 유지할 때 이슬점 온도까지</span></div>
+        <div class="legend-item"><span class="sample condensation-sample"></span><span>과포화 상태에서 응결되는 수증기량</span></div>
       </section>
 
       <p class="note">
@@ -365,6 +461,14 @@
     const satText = document.querySelector("#satText");
     const dewText = document.querySelector("#dewText");
     const condText = document.querySelector("#condText");
+    const learnModeButton = document.querySelector("#learnModeButton");
+    const quizModeButton = document.querySelector("#quizModeButton");
+    const quizPanel = document.querySelector("#quizPanel");
+    const satAnswer = document.querySelector("#satAnswer");
+    const dewAnswer = document.querySelector("#dewAnswer");
+    const condAnswer = document.querySelector("#condAnswer");
+    const checkAnswerButton = document.querySelector("#checkAnswerButton");
+    const quizFeedback = document.querySelector("#quizFeedback");
 
     const chart = {
       minT: -10,
@@ -375,10 +479,13 @@
     };
 
     let selected = { temp: 20, vapor: 10 };
+    let mode = "learn";
+    let latestAnswer = { sat: 0, dew: null, condensation: 0 };
 
     function saturationAmount(tempC) {
       const vaporPressure = 6.112 * Math.exp((17.62 * tempC) / (243.12 + tempC));
-      return (216.7 * vaporPressure) / (tempC + 273.15);
+      const airPressure = 1013.25;
+      return (621.98 * vaporPressure) / (airPressure - vaporPressure);
     }
 
     function findDewPoint(vaporAmount) {
@@ -468,9 +575,8 @@
 
     function addDefinitions() {
       const defs = svgEl("defs");
-      defs.append(addArrowMarker("arrowGuide", "#7c3aed"));
-      defs.append(addArrowMarker("arrowDew", "#138a72"));
-      defs.append(addArrowMarker("arrowCondensation", "#f59e0b"));
+      defs.append(addArrowMarker("arrowGuide", "#dc2626"));
+      defs.append(addArrowMarker("arrowDew", "#0ea5e9"));
       svg.append(defs);
     }
 
@@ -480,6 +586,21 @@
         points.push(`${xScale(temp).toFixed(2)},${yScale(saturationAmount(temp)).toFixed(2)}`);
       }
       return `M ${points.join(" L ")}`;
+    }
+
+    function quadraticPoint(start, control, end, t) {
+      const oneMinusT = 1 - t;
+      return {
+        x: oneMinusT * oneMinusT * start.x + 2 * oneMinusT * t * control.x + t * t * end.x,
+        y: oneMinusT * oneMinusT * start.y + 2 * oneMinusT * t * control.y + t * t * end.y,
+      };
+    }
+
+    function quadraticSegment(start, control, end, fromT, toT) {
+      const startPoint = quadraticPoint(start, control, end, fromT);
+      const endPoint = quadraticPoint(start, control, end, toT);
+      const controlPoint = quadraticPoint(start, control, end, (fromT + toT) / 2);
+      return `M ${startPoint.x} ${startPoint.y} Q ${controlPoint.x} ${controlPoint.y} ${endPoint.x} ${endPoint.y}`;
     }
 
     function render() {
@@ -521,7 +642,7 @@
         class: "axis-label",
       });
 
-      addText("수증기량 (g/m³)", {
+      addText("수증기량 (g/kg)", {
         x: 18,
         y: (b.top + b.bottom) / 2,
         "text-anchor": "middle",
@@ -541,7 +662,7 @@
 
       svg.append(svgEl("line", {
         x1: pointX,
-        y1: b.bottom,
+        y1: pointY,
         x2: curvePoint.x,
         y2: curvePoint.y,
         class: "sat-arrow",
@@ -552,51 +673,76 @@
         r: 7,
         class: "curve-point",
       }));
-      addText(`${satAtTemp.toFixed(1)} g/m³`, {
-        x: Math.min(curvePoint.x + 12, b.right - 8),
+      addText("포화수증기량", {
+        x: curvePoint.x > b.right - 90 ? curvePoint.x - 12 : curvePoint.x + 12,
         y: curvePoint.y - 10,
-        "text-anchor": curvePoint.x > b.right - 100 ? "end" : "start",
+        "text-anchor": curvePoint.x > b.right - 90 ? "end" : "start",
         class: "graph-value sat-label",
       });
 
       if (dewPoint !== null) {
+        const dewX = xScale(dewPoint);
         svg.append(svgEl("line", {
           x1: pointX,
           y1: pointY,
-          x2: xScale(dewPoint),
+          x2: dewX,
           y2: pointY,
           class: "dew-arrow",
         }));
         svg.append(svgEl("circle", {
-          cx: xScale(dewPoint),
+          cx: dewX,
           cy: pointY,
           r: 7,
           class: "dew-point",
         }));
-        addText(`${dewPoint.toFixed(1)}°C`, {
-          x: xScale(dewPoint),
-          y: pointY - 12,
+        svg.append(svgEl("line", {
+          x1: dewX,
+          y1: pointY,
+          x2: dewX,
+          y2: b.bottom,
+          class: "dew-drop-line",
+        }));
+        addText("이슬점 온도", {
+          x: dewX,
+          y: b.bottom - 10,
           "text-anchor": "middle",
           class: "graph-value dew-label",
         });
       }
 
       if (condensation > 0.05) {
-        const offset = pointX > b.right - 70 ? -18 : 18;
-        const labelAnchor = pointX > b.right - 120 ? "end" : "start";
-        svg.append(svgEl("line", {
-          x1: pointX + offset,
-          y1: pointY,
-          x2: curvePoint.x + offset,
-          y2: curvePoint.y,
-          class: "condensation-arrow",
+        const curveStart = { x: pointX, y: pointY };
+        const curveEnd = { x: curvePoint.x, y: curvePoint.y };
+        const curveControl = {
+          x: Math.max(b.left + 18, pointX - 58),
+          y: (pointY + curvePoint.y) / 2,
+        };
+        const labelPoint = quadraticPoint(curveStart, curveControl, curveEnd, 0.5);
+        svg.append(svgEl("path", {
+          d: quadraticSegment(curveStart, curveControl, curveEnd, 0, 0.39),
+          class: "condensation-curve",
         }));
-        addText(`응결량 ${condensation.toFixed(1)} g/m³`, {
-          x: pointX + (labelAnchor === "end" ? -14 : 14),
-          y: pointY - 16,
-          "text-anchor": labelAnchor,
+        svg.append(svgEl("path", {
+          d: quadraticSegment(curveStart, curveControl, curveEnd, 0.61, 1),
+          class: "condensation-curve",
+        }));
+        addText("응결량", {
+          x: labelPoint.x - 5,
+          y: labelPoint.y + 5,
+          "text-anchor": "middle",
           class: "graph-value condensation-label",
         });
+        if (mode === "learn") {
+          const useLeftLabel = pointX > b.left + 230;
+          const labelX = useLeftLabel ? pointX - 14 : pointX + 14;
+          const labelY = pointY < b.top + 28 ? pointY + 28 : pointY - 16;
+          addText(`응결량: ${selected.vapor.toFixed(1)} - ${satAtTemp.toFixed(1)} = ${condensation.toFixed(1)} g/kg`, {
+            x: labelX,
+            y: labelY,
+            "text-anchor": useLeftLabel ? "end" : "start",
+            class: "graph-value condensation-label",
+          });
+        }
       }
 
       svg.append(svgEl("circle", {
@@ -629,10 +775,42 @@
       statusBox.style.borderLeftColor = color;
       stateName.textContent = state;
       stateText.textContent = text;
-      coordText.textContent = `${selected.temp.toFixed(0)}°C, ${selected.vapor.toFixed(0)} g/m³`;
-      satText.textContent = `${satAtTemp.toFixed(1)} g/m³`;
+      coordText.textContent = `${selected.temp.toFixed(0)}°C, ${selected.vapor.toFixed(0)} g/kg`;
+      satText.textContent = `${satAtTemp.toFixed(1)} g/kg`;
       dewText.textContent = dewPoint === null ? "그래프 범위 밖" : `${dewPoint.toFixed(1)}°C`;
-      condText.textContent = `${condensation.toFixed(1)} g/m³`;
+      condText.textContent = `${condensation.toFixed(1)} g/kg`;
+      latestAnswer = { sat: satAtTemp, dew: dewPoint, condensation };
+      quizFeedback.textContent = "";
+    }
+
+    function setMode(nextMode) {
+      mode = nextMode;
+      document.body.classList.toggle("quiz-mode", mode === "quiz");
+      quizPanel.classList.toggle("active", mode === "quiz");
+      learnModeButton.classList.toggle("active", mode === "learn");
+      quizModeButton.classList.toggle("active", mode === "quiz");
+      quizFeedback.textContent = "";
+    }
+
+    function readNumber(input) {
+      const value = Number(input.value.replace(",", "."));
+      return Number.isFinite(value) ? value : null;
+    }
+
+    function checkOne(label, value, answer, unit) {
+      if (answer === null) return `${label}: 그래프 범위 밖`;
+      if (value === null) return `${label}: 값을 입력해 보세요`;
+      const ok = Math.abs(value - answer) <= 0.5;
+      return `${label}: ${ok ? "정답" : `다시 생각해 보기 (정답 ${answer.toFixed(1)}${unit})`}`;
+    }
+
+    function checkAnswers() {
+      const results = [
+        checkOne("포화수증기량", readNumber(satAnswer), latestAnswer.sat, " g/kg"),
+        checkOne("이슬점 온도", readNumber(dewAnswer), latestAnswer.dew, "°C"),
+        checkOne("응결량", readNumber(condAnswer), latestAnswer.condensation, " g/kg"),
+      ];
+      quizFeedback.textContent = results.join(" · ");
     }
 
     function movePointFromEvent(event) {
@@ -644,6 +822,10 @@
       selected = { temp, vapor };
       render();
     }
+
+    learnModeButton.addEventListener("click", () => setMode("learn"));
+    quizModeButton.addEventListener("click", () => setMode("quiz"));
+    checkAnswerButton.addEventListener("click", checkAnswers);
 
     svg.addEventListener("pointerdown", (event) => {
       svg.setPointerCapture(event.pointerId);
